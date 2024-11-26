@@ -1,14 +1,34 @@
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_community import GoogleDriveLoader
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 
 model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-messages = [
-    SystemMessage("You are a helpful assistant."),
-    HumanMessage("こんにちは、私はポリンキーです"),
-    AIMessage(content="こんにちは、ポリンキーさん。"),
-    HumanMessage("私の名前はわかりますか?"),
-]
+class Recipe(BaseModel):  # noqa: D101
+    ingredients: list[str] = Field(description="材料")
+    steps: list[str] = Field(description="手順")
 
-ai_message = model.invoke(messages)
-print(ai_message.content)
+output_parser = PydanticOutputParser(pydantic_object=Recipe)
+format_instructions = output_parser.get_format_instructions()
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "ユーザーが入力した料理のレシピを考えてください。\n\n"
+            "{format_instructions}",
+        ),
+        ("human", "{dish}"),
+    ]
+)
+
+prompt_with_format_instructions = prompt.partial(
+    format_instructions=format_instructions
+)
+
+chain = prompt_with_format_instructions | model | output_parser
+recipe = chain.invoke({"dish":"カレー"})
+print(recipe)
+
