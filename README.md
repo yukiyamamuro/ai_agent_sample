@@ -4,7 +4,7 @@
 
 ```
 $ aqua i
-$ direnv allow
+$ mise trust
 ```
 
 Python環境構築
