@@ -4,8 +4,11 @@ from langchain_core.runnables import RunnableLambda, RunnableParallel
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+import promptTemplate
+
 model = ChatOpenAI(model="gpt-4o-mini", temperature=1)
 
+# ====== Define Pydantic Model ======
 class Recipe(BaseModel):  # noqa: D101
     ingredients: list[str] = Field(description="材料")
     steps: list[str] = Field(description="手順")
@@ -13,17 +16,9 @@ class Recipe(BaseModel):  # noqa: D101
 output_parser = PydanticOutputParser(pydantic_object=Recipe)
 format_instructions = output_parser.get_format_instructions()
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "ユーザーが入力した料理のレシピを考えてください。\n\n"
-            "{format_instructions}",
-        ),
-        ("human", "{dish}"),
-    ]
-)
 
+# ====== Define Prompt ======
+prompt = promptTemplate.recipe_prompt
 prompt_with_format_instructions = prompt.partial(
     format_instructions=format_instructions
 )
@@ -32,7 +27,12 @@ def printerer(text: str) -> str:
     print(text)
     return text
 
-base_chain = prompt_with_format_instructions | RunnableLambda(printerer) | model | output_parser
+base_chain = (
+    prompt_with_format_instructions
+    | RunnableLambda(printerer)
+    | model
+    | output_parser
+)
 
 synthesize_prompt = ChatPromptTemplate.from_messages(
     [

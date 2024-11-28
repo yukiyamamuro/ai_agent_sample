@@ -9,5 +9,6 @@ dependencies = [
     "langchain-core",
     "langchain-google-community>=2.0.2",
     "langchain-openai",
+    "langchain-prompty>=0.1.1",
     "ruff",
 ]
