@@ -2,7 +2,8 @@ import operator
 from typing import Annotated
 
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langgraph.graph import Graph
+from langchain_core.runnables import ConfigurableField
+from langchain_openai import ChatOpenAI
 
 ROLES = {
     "1": {
@@ -24,7 +25,7 @@ ROLES = {
 
 
 class State(BaseModel):
-    query: str = Field(description="ユーザーからの質問")
+    query: str = Field(...,description="ユーザーからの質問")
     current_role: str = Field(
         default="",
         description="選定された回答ロール",
@@ -39,5 +40,6 @@ class State(BaseModel):
         default="", description="品質チェックの判定理由"
     )
 
-workflow = Graph(State)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+llm = llm.configurable_fields(max_tokens=ConfigurableField(id="max_tokens"))
 
